@@ -29,6 +29,9 @@ pd_df=my_dataframe.to_pandas()
 #st.dataframe(pd_df)
 #st.stop()
 
+# Extract fruit_list from pandas dataframe
+fruit_list = pd_df['FRUIT_NAME'].tolist()
+
 ingredients_list = st.multiselect(
 'Choose up to 5 ingredients:',
  fruit_list,
@@ -45,22 +48,26 @@ if ingredients_list:
         st.write('The search value for ', fruit_chosen,' is ', search_on, '.')
 
         st.subheader(fruit_chosen + ' Nutrition Information')
-        smoothiefroot_response = requests.get(f"https://my.smoothiefroot.com/api/fruit/{search_on}")  
-        sf_df = st.dataframe(data=smoothiefroot_response.json(), use_container_width=True)
+        smoothiefroot_response = requests.get(f"https://my.smoothiefroot.com/api/fruit/{search_on}")
+        
+        if smoothiefroot_response.status_code == 200:
+            st.dataframe(data=smoothiefroot_response.json(), use_container_width=True)
+        else:
+            st.error(f"Could not fetch nutrition info for {fruit_chosen}")
       
     #st.write(ingredients_string)
 
     # Use parameterized query to prevent SQL injection
     my_insert_stmt = "insert into smoothies.public.orders(ingredients, name_on_order) values (?, ?)"
 
-   # st.write(my_insert_stmt)
-    time_to_insert = st.button('Submit Order')
+    # st.write(my_insert_stmt)
+    
+    if name_on_order.strip():
+        time_to_insert = st.button('Submit Order')
 
-    if time_to_insert:
-        session.sql(my_insert_stmt, [ingredients_string.strip(), name_on_order]).collect()
-        
-        st.success('Your Smoothie is ordered!', icon="✅")
-
-
-
-
+        if time_to_insert:
+            session.sql(my_insert_stmt, [ingredients_string.strip(), name_on_order]).collect()
+            
+            st.success('Your Smoothie is ordered!', icon="✅")
+    else:
+        st.warning("Please enter a name for your smoothie before submitting")
